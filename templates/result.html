@@ -15,14 +15,20 @@
       <div class="card w-25">
         <div class="card-body py-4">
           <h2 class="card-title text-center">Resultado</h2>
-          <h3 class="card-title text-center">
+          <h4 class="card-title text-center">
             {{value.class.values[0]}} con una certeza de {{'%0.2f'|
             format(value.confidence.values[0]|float)}}
-          </h3>
+          </h4>
           <div class="my-4 d-flex justify-content-center">
-            <img class="h-25 w-25" src="{{image}}" />
+            <img
+              style="height: 200px; width: 200px; object-fit: cover"
+              src="{{image}}"
+            />
           </div>
-          <h5><a href="/">Regresar</a></h5>
+          <div class="my-2 d-flex justify-content-center">
+            <img class="h-100 w-100" src="/statistics.png" />
+          </div>
+          <span><a href="/">Regresar</a></span>
         </div>
       </div>
     </div>
