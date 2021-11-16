@@ -62,7 +62,7 @@ def home():
 					file.save(os.path.join(folder, secure_filename(filename)))
 					return redirect(url_for('predict', name=filename, url='false'))
 				else:
-					flash('Incorrect format')
+					flash('Formato incorrecto')
 					return redirect(request.url)
 	return render_template('home.html')
 
