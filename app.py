@@ -21,49 +21,36 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.')[-1].lower() in ALLOWED_EXTENSIONS
 
+def remove_files():
+	folder = os.path.join(app.instance_path, 'uploads')
+	os.makedirs(folder, exist_ok=True)
+	files = glob.glob(os.path.join(folder,'*'))
+	for f in files:
+		os.remove(f)
+
 @app.route("/", methods=["GET","POST"])
 def home():
 	if request.method == 'POST':
-			if 'file' not in request.files:
-				if request.form['url'] != '':
-					if (allowed_file(request.form['url'])):
-						folder = os.path.join(app.instance_path, 'uploads')
-						os.makedirs(folder, exist_ok=True)
-						files = glob.glob(os.path.join(folder,'*'))
-						for f in files:
-							os.remove(f)
-						return redirect(url_for('predict', name=request.form['url'], url='true'))
-					flash('El URL no es válido')
-					return redirect(request.url)
-				flash('No hay archivo')
+		file = request.files['file']
+		if file.filename == '':
+			if request.form['url'] != '':
+				if (allowed_file(request.form['url'])):
+					remove_files()
+					return redirect(url_for('predict', name=request.form['url'], url='true'))
+				flash('El URL no es válido')
 				return redirect(request.url)
-			file = request.files['file']
-			if file.filename == '':
-				if request.form['url'] != '':
-					if (allowed_file(request.form['url'])):
-						folder = os.path.join(app.instance_path, 'uploads')
-						os.makedirs(folder, exist_ok=True)
-						files = glob.glob(os.path.join(folder,'*'))
-						for f in files:
-							os.remove(f)
-						return redirect(url_for('predict', name=request.form['url'], url='true'))
-					flash('El URL no es válido')
-					return redirect(request.url)
-				flash('No hay archivo seleccionado')
+			flash('No hay archivo seleccionado')
+			return redirect(request.url)
+		if file:
+			if allowed_file(file.filename):
+				filename = secure_filename(file.filename)
+				folder = os.path.join(app.instance_path, 'uploads')
+				remove_files()
+				file.save(os.path.join(folder, secure_filename(filename)))
+				return redirect(url_for('predict', name=filename, url='false'))
+			else:
+				flash('Formato incorrecto')
 				return redirect(request.url)
-			if file:
-				if allowed_file(file.filename):
-					filename = secure_filename(file.filename)
-					folder = os.path.join(app.instance_path, 'uploads')
-					os.makedirs(folder, exist_ok=True)
-					files = glob.glob(os.path.join(folder,'*'))
-					for f in files:
-						os.remove(f)
-					file.save(os.path.join(folder, secure_filename(filename)))
-					return redirect(url_for('predict', name=filename, url='false'))
-				else:
-					flash('Formato incorrecto')
-					return redirect(request.url)
 	return render_template('home.html')
 
 @app.route("/predict")
@@ -97,12 +84,14 @@ def predict():
 	top_preds = inference_pipeline(net_chosen='squeezenet1_1', 
                    img_path=filepath
                    )
+	
 	# Generate plot
 	fig = Figure()
 	ax = fig.add_subplot(1, 1, 1)
 	top_preds.set_index(['class'])['confidence'].head(5).plot(ax=ax, kind='barh', xlabel="Clase")
 	ax.invert_yaxis()
 	fig.tight_layout()
+
 	# Convert plot to PNG image
 	pngImage = io.BytesIO()
 	FigureCanvas(fig).print_png(pngImage)
